@@ -20,28 +20,28 @@ public class QuestionRepositoryImpl implements QuestionRepository {
 
     private String findById =
             """
-                        SELECT * FROM questions WHERE id = ?
+                    SELECT * FROM questions WHERE id = ?
                     """;
     private String findByTopic =
             """
-                        SELECT * FROM questions WHERE topic = ?
+                    SELECT * FROM questions WHERE topic = ?
                     """;
     private String saveQuestion =
             """
-                        INSERT INTO questions (text,topic)
-                         VALUES (?,?)
+                    INSERT INTO questions (text,topic)
+                    VALUES (?,?)
                     """;
     private String updateQuestion =
             """
                     UPDATE questions
                     SET text=?, topic=?
                     WHERE id = ?
-                     """;
+                    """;
     private String deleteQuestionById =
             """
                     DELETE FROM questions
-                     WHERE id = ?
-                       """;
+                    WHERE id = ?
+                    """;
 
     @Override
     public Question get(int id) {
