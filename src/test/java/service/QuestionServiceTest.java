@@ -1,26 +1,51 @@
 package service;
 
-import org.junit.Before;
+import model.Question;
+import org.junit.Assert;
 import org.junit.Test;
-import repository.QuestionRepositoryImpl;
-import repository.dao.QuestionRepository;
+import repositotyMock.QuestionRepositoryImplMock;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class QuestionServiceTest {
-    private String user = "postgres";
-    private String password = "1234";
-    private String url = "jdbc:postgresql://localhost:5432/postgres";
-    private Connection connection;
-    @Before
-    public void init() throws SQLException {
-        connection = DriverManager.getConnection(url,user,password);
+    private List<Question> questionList = List.of(
+            Question.builder().id(5).text("something").topic("TestTopic").build(),
+            Question.builder().id(6).text("something").topic("TestTopic").build(),
+            Question.builder().id(7).text("something").topic("TestTopic").build());
+    private  List<Question> questions = new ArrayList<>();
+    private QuestionRepositoryImplMock questionRepository = new QuestionRepositoryImplMock(questionList);
+
+    @Test
+    public void getRandomQuestionByTopicTest() {
+        QuestionService questionService = new QuestionService(questionRepository);
+        Question randomQuestionByTopic = questionService.getRandomQuestionByTopic("TestTopic");
+        Assert.assertTrue(questionRepository.getTestQuestions().contains(randomQuestionByTopic));
+    }
+
+    @Test
+    public void getRandomQuestionTest() {
+        QuestionService questionService = new QuestionService(questionRepository);
+        Question randomQuestion = questionService.getRandomQuestion();
+        Assert.assertTrue(questionList.contains(randomQuestion));
+    }
+
+    @Test
+    public void addQuestionTest() {
+        questions.addAll(questionList);
+        QuestionService questionService1 = new QuestionService(new QuestionRepositoryImplMock(questions));
+        Question actualQuestion = Question.builder().id(1).text("something from java").topic("TopicJAVA").build();
+        questionService1.addQuestion(1, "something from java", "TopicJAVA");
+        Assert.assertTrue(questions.contains(actualQuestion));
+        questions.remove(actualQuestion);
     }
     @Test
-    public void getRandomQuestionByTopicTest(){
-        QuestionService questionService = new QuestionService(new QuestionRepositoryImpl(connection));
-        System.out.println(questionService.getRandomQuestionByTopic("INCAPCULATION"));
+    public void deleteQuestionTest() {
+        questions.addAll(questionList);
+        QuestionService questionService2 = new QuestionService(new QuestionRepositoryImplMock(questions));
+        Question actualQuestion = Question.builder().id(1).text("something from java").topic("TopicJAVA").build();
+        questionService2.addQuestion(1, "something from java", "TopicJAVA");
+        questionService2.deleteQuestion(1);
+        Assert.assertTrue(!questions.contains(actualQuestion));
     }
 }
