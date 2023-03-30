@@ -1,5 +1,6 @@
 package repository;
 
+import exceptions.SqlUpdateException;
 import model.Question;
 import repository.dao.QuestionRepository;
 
@@ -12,35 +13,39 @@ import java.util.List;
 
 public class QuestionRepositoryImpl implements QuestionRepository {
 
-    private Connection connection;
+    private final Connection connection;
 
-    public QuestionRepositoryImpl(Connection connection) {
-        this.connection = connection;
+    public QuestionRepositoryImpl() {
+        this.connection = ConnectionSingleton.getConnection() ;
     }
 
-    private String findById =
+    private final String findById =
             """
                     SELECT * FROM questions WHERE id = ?
                     """;
-    private String findByTopic =
+    private final String findByTopic =
             """
                     SELECT * FROM questions WHERE topic = ?
                     """;
-    private String saveQuestion =
+    private final String saveQuestion =
             """
-                    INSERT INTO questions (text,topic)
-                    VALUES (?,?)
+                    INSERT INTO questions (id,text,topic)
+                    VALUES (?,?,?)
                     """;
-    private String updateQuestion =
-            """
-                    UPDATE questions
-                    SET text=?, topic=?
-                    WHERE id = ?
-                    """;
-    private String deleteQuestionById =
+
+    private final String deleteQuestionById =
             """
                     DELETE FROM questions
                     WHERE id = ?
+                    """;
+    private final String getAllQuest =
+            """
+                    SELECT * FROM questions
+                    """;
+    private final String getRandomQuest =
+            """
+                    SELECT id,text,topic FROM questions
+                    ORDER BY RANDOM() LIMIT 1
                     """;
 
     @Override
@@ -57,7 +62,24 @@ public class QuestionRepositoryImpl implements QuestionRepository {
                     .topic(resultSet.getString("topic"))
                     .build();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new SqlUpdateException(e.getMessage());
+        }
+    }
+
+    @Override
+    public Question getRndmQuestion() {
+        try {
+            PreparedStatement statement = connection.prepareStatement(getRandomQuest);
+            statement.execute();
+            ResultSet resultSet = statement.getResultSet();
+            resultSet.next();
+            return Question.builder()
+                    .id(resultSet.getInt("id"))
+                    .text(resultSet.getString("text"))
+                    .topic(resultSet.getString("topic"))
+                    .build();
+        } catch (SQLException e) {
+            throw new SqlUpdateException(e.getMessage());
         }
     }
 
@@ -79,7 +101,7 @@ public class QuestionRepositoryImpl implements QuestionRepository {
             }
             return question;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new SqlUpdateException(e.getMessage());
         }
     }
 
@@ -87,27 +109,14 @@ public class QuestionRepositoryImpl implements QuestionRepository {
     public void save(Question question) {
         try {
             PreparedStatement statement = connection.prepareStatement(saveQuestion);
-            statement.setString(1, question.getText());
-            statement.setString(2, question.getTopic());
+            statement.setInt(1, question.getId());
+            statement.setString(2, question.getText());
+            statement.setString(3, question.getTopic());
             statement.execute();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new SqlUpdateException(e.getMessage());
         }
     }
-
-    @Override
-    public void update(Question question) {
-        try {
-            PreparedStatement statement = connection.prepareStatement(updateQuestion);
-            statement.setString(1, question.getText());
-            statement.setString(2, question.getTopic());
-            statement.setInt(3, question.getId());
-            statement.execute();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     @Override
     public void delete(int id) {
         try {
@@ -115,8 +124,8 @@ public class QuestionRepositoryImpl implements QuestionRepository {
             statement.setInt(1, id);
             statement.execute();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new SqlUpdateException(e.getMessage());
         }
     }
-
 }
+
